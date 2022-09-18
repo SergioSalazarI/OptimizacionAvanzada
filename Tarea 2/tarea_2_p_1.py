@@ -31,3 +31,27 @@ for i in range(26):
         
         d = 2*6378*np.arcsin(root)
         distance[(L[i],L[j])] = d
+        
+m = Model("MVRP")
+x = m.addVars(L,L,vtype=GRB.BINARY,name='x')
+
+# Cada tienda es visitado
+for j in L[1:-1]:
+    m.addConstr(quicksum(x[i,j] for i in L)==1)
+    
+# Cada visita sale del nodo
+for i in L[1:-1]:
+    m.addConstr(quicksum(x[i,j] for j in L)==1)
+    
+# Del depósito salen K camiones. K=5
+m.addConstr(quicksum(x[L[0],j] for j in L[1:-1])==5)
+
+# Al depósito ingresan k camiones. K=5
+m.addConstr(quicksum(x[i,L[0]] for i in L[1:-1])==5)
+
+# Evitar ciclos entre ubicaciones
+for i in L:
+    for j in L:
+        m.addConstr(x[i,j]+x[j,i]<=1)
+
+print(L[1:-1])

@@ -3,7 +3,7 @@ from openpyxl import*
 from gurobipy import*
 
 # cargar parámetros
-book = load_workbook("C:\\Users\\david\\OneDrive - Universidad de los Andes\\2022-2\\Optimización Avanzada\\DatosExcursión.xlsx")
+book = load_workbook("C:\\Users\\david\\OneDrive - Universidad de los Andes\\2022-2\\Optimización Avanzada\\Otros\\DatosExcursión.xlsx")
 sheet = book.active
 
 q = {} # PREFERENCIAS
