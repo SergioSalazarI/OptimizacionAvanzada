@@ -3,6 +3,8 @@ from gurobipy import*
 
 import numpy as np
 import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
 import os
 
 current = os.getcwd()
@@ -74,7 +76,12 @@ rutas = []
 
 for i,j in x.keys():
     if x[i,j].x>0:
+        
         rutas.append((i,j))
+
+#for j in L:
+#    if x["Tienda 19",j].x>0:
+#        print("Tienda 19 - ",j)
 
 def calcular_rutas(i:int):
     r = []
@@ -125,6 +132,49 @@ demanda = calcular_demanda(rutas)
 
 dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
 dic = pd.DataFrame.from_dict(dic)
+dic.set_index("Ruta", inplace=True)
 print(dic)
 print(z)
 print(np.sum(calcular_distancias(rutas)))
+
+def rutas_to_dataFrame(r:list):
+    dic = {"from":[],"to":[]}
+    for ruta in r:
+        for i in range(len(ruta)-1):
+            dic["from"].append(ruta[i])
+            dic["to"].append(ruta[i+1])
+    return dic
+
+def ruta_to_dataFrame(r:list):
+    dic = {"from":[],"to":[]}
+    for i in range(len(r)-1):
+        dic["from"].append(r[i])
+        dic["to"].append(r[i+1])
+    return dic
+
+#print(rutas_to_dataFrame(rutas))
+
+def plot_rutas(r:list,color:list):
+    #dic = rutas_to_dataFrame(r)
+    #G = nx.from_pandas_edgelist(dic, 'from', 'to', create_using=nx.Graph())
+    G = nx.DiGraph()
+    dic = rutas_to_dataFrame(r)
+    
+    for i in L:
+        G.add_node(i)
+        
+    for i,j in zip(dic["from"],dic["to"]):
+        G.add_edge(i,j)
+    edges_colors=[]
+    for i in range(5):
+        edges_colors.extend([color[i]]*(len(r[i])-1))
+    pos = nx.circular_layout(G)
+    nx.draw_kamada_kawai(G)
+    nx.draw_networkx_labels(G,pos=nx.spring_layout(G),font_size=6,alpha=0.8)
+    plt.axis("off")
+    plt.axis("equal")
+    plt.tight_layout()
+    plt.show()
+    
+color = ["blue","red","black","orange","green"]
+plot_rutas(rutas,color)
