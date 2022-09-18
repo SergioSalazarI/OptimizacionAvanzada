@@ -1,0 +1,36 @@
+q:[			
+("Papá" "Botella de agua")8	("Mamá" "Botella de agua")2	("Hijo" "Botella de agua")11	("Hija" "Botella de agua")8
+("Papá" "Carpa")2	("Mamá" "Carpa")9	("Hijo" "Carpa")5	("Hija" "Carpa")4
+("Papá" "Lata de atún")6	("Mamá" "Lata de atún")12	("Hijo" "Lata de atún")7	("Hija" "Lata de atún")3
+("Papá" "Botiquín")12	("Mamá" "Botiquín")4	("Hijo" "Botiquín")6	("Hija" "Botiquín")12
+("Papá" "Protector solar")11	("Mamá" "Protector solar")1	("Hijo" "Protector solar")12	("Hija" "Protector solar")7
+("Papá" "Lata de salchichas")7	("Mamá" "Lata de salchichas")10	("Hijo" "Lata de salchichas")10	("Hija" "Lata de salchichas")6
+("Papá" "Bolsa de dormir")3	("Mamá" "Bolsa de dormir")7	("Hijo" "Bolsa de dormir")3	("Hija" "Bolsa de dormir")10
+("Papá" "Linterna")10	("Mamá" "Linterna")8	("Hijo" "Linterna")2	("Hija" "Linterna")2
+("Papá" "Repelente")9	("Mamá" "Repelente")3	("Hijo" "Repelente")9	("Hija" "Repelente")9
+("Papá" "Brújula")5	("Mamá" "Brújula")5	("Hijo" "Brújula")1	("Hija" "Brújula")1
+("Papá" "Cobija")4	("Mamá" "Cobija")11	("Hijo" "Cobija")4	("Hija" "Cobija")11
+("Papá" "Balón")1	("Mamá" "Balón")6	("Hijo" "Balón")8	("Hija" "Balón")5
+]
+
+p:[
+("Botella de agua")2
+("Carpa")8
+("Lata de atún")2
+("Botiquín")2
+("Protector solar")1
+("Lata de salchichas")2
+("Bolsa de dormir")4
+("Linterna")3
+("Repelente")2
+("Brújula")1
+("Cobija")6
+("Balón")3
+]
+
+b:[
+("Papá")12
+("Mamá")12
+("Hijo")6
+("Hija")6
+]

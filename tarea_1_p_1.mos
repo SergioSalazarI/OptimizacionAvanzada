@@ -1,0 +1,261 @@
+!@encoding CP1252
+model ModelName
+uses "mmxprs"; !gain access to the Xpress-Optimizer solver
+
+forward procedure imprimir
+
+declarations
+	!Conjuntos
+	Fichas = 1..14
+	Casillas = 1..36
+	
+	!Parámetros del modelo
+	p: array(Fichas) of integer ! Colores de las fichas
+	d: array(Casillas) of integer ! Colores reales de las casillas
+	num: array(Fichas) of integer ! Cantidad de celdas que ocupa una ficha
+	
+	!Variables de decisión
+	x: array(Fichas,Casillas) of mpvar ! 1 si la ficha i se ubica en la casilla j, 0 de lo contrario
+	
+end-declarations
+
+inputFile := 'parametros.txt'
+outputFile := 'Resultados2.txt'
+
+initializations from inputFile
+	p	d	num
+end-initializations
+
+! -----------------------------------------------------------------------------------
+! Creación de las variables
+forall(i in Fichas, j in Casillas) do
+	create(x(i,j))
+	x(i,j) is_binary
+end-do
+
+! Restricciones del modelo
+
+! @-----------------------------------------@
+! Una casilla tiene asignada una unica ficha
+forall(j in Casillas) do
+	sum(i in Fichas) x(i,j) = 1
+end-do
+
+! @-----------------------------------------@
+! Se asigna el color correcto
+forall(j in Casillas) do
+	sum(i in Fichas) x(i,j)*p(i) - d(j) = 0
+end-do
+
+! @-----------------------------------------@
+! La cantidad de veces que se asigna una ficha es igual a la cantidad de celdas
+forall(i in Fichas) do
+	sum(j in Casillas) x(i,j) = num(i)
+end-do
+
+! -----------------------------------------------------------------------------------
+! Ficha 1
+x(1,2)+x(1,7)>= x(1,1)
+2 - x(1,2) - x(1,7) >= x(1,1)
+x(1,1) <= x(1,2)
+x(1,1) <= x(1,7)
+
+! -----------------------------------------------------------------------------------
+! Ficha2
+x(2,1) <= x(2,2)+x(2,7)
+- x(2,1) - x(2,2) - x(2,7) >= -2
+x(2,1) <= x(2,8)
+x(2,13) - x(2,1) - x(2,7) >= -1
+x(2,3) - x(2,1) - x(2,2) >= -1
+!x(2,13) - x(2,7) >=0
+!x(2,1) >= x(2,2)+x(2,7)
+!x(2,1) <= 2 - x(2,2) + x(2,7)
+!x(2,1) <= x(2,3) + x(2,13)
+!x(2,3) + x(2,13) <= 1
+
+x(2,2) <= x(2,3) + x(2,8)
+x(2,4) - x(2,2) - x(2,3) >= -1
+x(2,14) - x(2,2) - x(2,8) >= -1
+x(2,7) + x(2,9) - x(2,8) >= 0
+!-x(2,2) - x(2,3) - x(2,8) - x(2,9) >= -3
+x(2,2) + x(2,7) + x(2,8) + x(2,9) <=3
+
+! -----------------------------------------------------------------------------------
+! Ficha 3
+
+! -----------------------------------------------------------------------------------
+! Ficha 4
+
+! -----------------------------------------------------------------------------------
+! Ficha 5,9,12
+forall(k in [5,9,12]) do
+	x(k,2) + x(k,7) - x(k,1) >= 0
+	x(k,2) + x(k,7) <= 1
+	
+	x(k,5) + x(k,12) - x(k,6) <= 0
+	x(k,5) + x(k,12) <= 1
+	
+	x(k,25) + x(k,32) - x(k,31) <= 0
+	x(k,25) + x(k,32) <= 1
+	
+	x(k,30) + x(k,35) - x(k,36) <= 0
+	x(k,30) + x(k,35) <= 1
+
+	L := [2,3,4,5]
+	forall(j in L) do
+		!j := L(i)
+		x(k,j-1) + x(k,j+1) + x(k,j+6) - x(k,j) >= 0
+		x(k,j-1) + x(k,j+1) + x(k,j+6) <= 1
+		
+		x(k,j+24) + x(k,j+29) + x(k,j+31) - x(k,j+30) >= 0
+		x(k,j+24) + x(k,j+29) + x(k,j+31) <= 1
+	end-do
+
+
+	L := [7,13,19,25]
+	forall(j in L) do
+		!j := L(i)
+		x(k,j-6) + x(k,j+1) + x(k,j+6) - x(k,j) >= 0 
+		x(k,j-6) + x(k,j+1) + x(k,j+6) <= 1
+		
+		x(k,j-1) + x(k,j+4) + x(k,j+11) - x(k,j+5) >= 0
+		x(k,j-1) + x(k,j+4) + x(k,j+11) <= 1
+	end-do
+
+
+	L := [8,14,20,26]
+	forall(c in L) do
+		forall(j in c..c+3) do
+			x(k,j-6) + x(k,j-1) + x(k,j+1) + x(k,j+6) - x(k,j) >= 0
+			x(k,j-6) + x(k,j-1) + x(k,j+1) + x(k,j+6) <= 1
+		end-do
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! Ficha 6
+x(13,2) + x(13,7) - x(13,1) >= 0
+x(13,2) + x(13,7) <= 1
+x(13,13) + x(13,19) - 2*x(13,7) >= 0
+x(13,3) + x(13,4) - 2*x(13,2) >= 0
+	
+x(13,5) + x(13,12) - x(13,6) <= 0
+x(13,5) + x(13,12) <= 1
+x(13,13) + x(13,19) - 2*x(13,7) >= 0
+x(13,3) + x(13,4) - 2*x(13,2) >= 0
+	
+x(13,25) + x(13,32) - x(13,31) <= 0
+x(13,25) + x(13,32) <= 1
+x(13,13) + x(13,19) - 2*x(13,7) >= 0
+x(13,3) + x(13,4) - 2*x(13,2) >= 0
+	
+x(13,30) + x(13,35) - x(13,36) <= 0
+x(13,30) + x(13,35) <= 1
+x(13,13) + x(13,19) - 2*x(13,7) >= 0
+
+
+forall(j in 2..5) do
+	x(13,j-1) + x(13,j+1) + x(13,j+6) - x(13,j) >= 0
+	x(13,j-1) + x(13,j+1) + x(13,j+6) <= 1
+	
+	x(13,j+24) + x(13,j+29) + x(13,j+31) - x(13,j+30) >= 0
+	x(13,j+24) + x(13,j+29) + x(13,j+31) <= 1
+end-do
+
+
+L := [7,13,19,25]
+forall(j in L) do
+	!j := L(i)
+	x(13,j-6) + x(13,j+1) + x(13,j+6) - x(13,j) >= 0 
+	x(13,j-6) + x(13,j+1) + x(13,j+6) <= 1
+		
+	x(13,j-1) + x(13,j+4) + x(13,j+11) - x(13,j+5) >= 0
+	x(13,j-1) + x(13,j+4) + x(13,j+11) <= 1
+end-do
+
+
+L := [8,14,20,26]
+forall(c in L) do
+	forall(j in c..c+3) do
+		x(13,j-6) + x(13,j-1) + x(13,j+1) + x(13,j+6) - x(13,j) >= 0
+		x(13,j-6) + x(13,j-1) + x(13,j+1) + x(13,j+6) <= 1
+	end-do
+end-do
+! -----------------------------------------------------------------------------------
+! Ficha 7,8,10,11
+! No requieren de restricciones
+
+! -----------------------------------------------------------------------------------
+! Ficha 13
+
+! -----------------------------------------------------------------------------------
+! Ficha 14
+!  Esquinas del tablero
+x(14,2) + x(14,7) + x(14,8) - 3*x(14,1) >=0
+x(14,5) + x(14,11) + x(14,12) - 3*x(14,6) >=0
+x(14,25) + x(14,26) + x(14,32) - 3*x(14,31) >=0
+x(14,29) + x(14,30) + x(14,35) - 3*x(14,36) >=0
+
+forall(j in 2..5) do
+	x(14,j+6) - x(14,j) >= 0
+	x(14,j-1) + x(14,j+1) - x(14,j) >= 0
+	x(14,j-1) + x(14,j+1) <= 1
+	
+	x(14,j+5) - x(14,j-1) - x(14,j) >= -1
+	x(14,j+7) - x(14,j+1) - x(14,j) >= -1
+	
+	x(14,j+24) - x(14,j+30) >= 0
+	x(14,j+29) + x(14,j+31) - x(14,j+30) >= 0
+	x(14,j+29) + x(14,j+31) <= 1
+	
+	x(14,j+23) - x(14,j+29) - x(14,j+30) >= -1
+	x(14,j+25) - x(14,j+31) - x(14,j+30) >= -1
+end-do
+
+L := [7,13,19,25]
+forall(j in L) do
+	x(14,j+1) - x(14,j) >= 0
+	x(14,j-6) + x(14,j+6) - x(14,j) >= 0
+	x(14,j-6) + x(14,j+6) <= 1
+	
+	x(14,j-5) - x(14,j-6) - x(14,j) >= -1
+	x(14,j+7) - x(14,j+6) - x(14,j) >= -1
+	
+	x(14,j+4) - x(14,j+5) >= 0
+	x(14,j-1) + x(14,j+11) - x(14,j+5) >= 0
+	x(14,j-1) + x(14,j+11) <= 1
+	
+	x(14,j-2) - x(14,j-1) - x(14,j+5) >= -1
+	x(14,j+10) - x(14,j+11) - x(14,j+5) >= -1
+end-do
+
+L := [8,14,20,26]
+	forall(c in L) do
+		forall(j in c..c+3) do
+			! Selecciona maximo 2 de las celdas
+			x(14,j-6) + x(14,j-1) + x(14,j+1) + x(14,+6) <= 2
+			x(14,j-6) + x(14,j+6) - x(14,j) >= 0
+			x(14,j-1) + x(14,j+1) - x(14,j) >= 0
+			
+			! Rellenar esquinas del cuadrado
+			x(14,j-7) - x(14,j-6) - x(14,j-1) >= -1
+			x(14,j-5) - x(14,j-6) - x(14,j+1) >= -1
+			x(14,j+5) - x(14,j+6) - x(14,j-1) >= -1
+			x(14,j+7) - x(14,j+6) - x(14,j+1) >= -1
+		end-do
+	end-do
+
+imprimir
+
+!Imprimir en consola
+procedure imprimir
+	forall(j in Casillas) do
+		forall(i in Fichas) do
+			if(getsol(x(i,j)))>0 then
+				writeln("El objeto ",j," es llevado por el excursionista ",i)
+			end-if
+		end-do
+	end-do
+end-procedure
+
+end-model

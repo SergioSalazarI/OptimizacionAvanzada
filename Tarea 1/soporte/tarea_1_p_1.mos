@@ -1,0 +1,908 @@
+!@encoding CP1252
+model ModelName
+uses "mmxprs"; !gain access to the Xpress-Optimizer solver
+
+forward procedure imprimir
+
+declarations
+	!Conjuntos
+	Fichas = 1..35
+	Casillas = 1..36
+
+	!Par�metros del modelo
+	p: array(Fichas) of integer ! Colores de las fichas
+	d: array(Casillas) of integer ! Colores reales de las casillas
+
+	!Variables de decisi�n
+	x: array(Fichas,Casillas) of mpvar ! 1 si la ficha i se ubica en la casilla j, 0 de lo contrario
+	y: array(Fichas,Casillas) of mpvar
+
+end-declarations
+
+inputFile := 'parametros3.txt'
+outputFile := 'resultados.txt'
+
+initializations from inputFile
+	p	d
+end-initializations
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+
+! Creaci�n de las variables
+
+forall(i in Fichas, j in Casillas) do
+	create(x(i,j))
+	x(i,j) is_binary
+end-do
+
+forall(i in Fichas, j in Casillas) do
+	create(x(i,j))
+	y(i,j) is_binary
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Restricciones del modelo
+
+! @-----------------------------------------@
+! La casilla inicial se asigna como máximo a una unica casilla del tablero
+forall(j in Casillas) do
+	sum(i in Fichas) x(i,j) <= 1
+end-do
+
+! @-----------------------------------------@
+! Una casilla tiene asignada una unica ficha
+forall(j in Casillas) do
+	sum(i in Fichas) y(i,j) = 1
+end-do
+
+! @-----------------------------------------@
+! Se asigna el color correcto
+forall(j in Casillas) do
+	sum(i in Fichas) y(i,j)*p(i) - d(j) = 0
+end-do
+
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Solo se puede utilizar un tipo de ficha
+
+! Ficha con forma de L
+!    *
+!    *
+!    **
+sum(j in Casillas) (x(1,j) + x(2,j) + x(3,j) + x(4,j) + x(5,j) + x(6,j) + x(7,j) + x(8,j) ) = 1
+
+!Ficha con forma de media cruz
+!    *
+!	 **
+!	 *
+sum(j in Casillas) (x(9,j) + x(10,j) + x(11,j) + x(12,j)) = 1
+
+
+!Ficha con forma de s
+!     *
+!	 **
+!	 *
+sum(j in Casillas) (x(13,j) + x(14,j) + x(15,j) + x(16,j)) = 1
+
+
+!Ficha con forma de esquina
+!     *
+!	 **
+!
+sum(j in Casillas) (x(17,j) + x(18,j) + x(19,j) + x(20,j)) = 1
+
+!Ficha con forma de barra de 2 celdas
+!
+!	 **
+!	 
+sum(j in Casillas) (x(21,j) + x(22,j)) = 1
+
+!Ficha con forma de barra de 3 celdas
+!         
+!	 ***
+!	 
+sum(j in Casillas) (x(23,j) + x(24,j)) = 1
+
+!Ficha con un cuadrado
+!         
+!	 *
+!	 
+sum(j in Casillas) x(25,j) = 1
+
+!Ficha con un cuadrado
+!         
+!	 *
+!	 
+sum(j in Casillas) x(26,j) = 1
+
+!Ficha con forma de barra de 2 celdas
+!         
+!	 **
+!	
+sum(j in Casillas) (x(27,j) + x(28,j)) = 1
+
+!Ficha con un cuadrado
+!         
+!	 *
+!	 
+sum(j in Casillas) x(29,j) = 1
+
+!Ficha con un cuadrado
+!         
+!	 *
+!	 
+sum(j in Casillas) x(30,j) = 1
+
+!Ficha con forma de barra de 2 celdas
+!         
+!	 **
+!	
+sum(j in Casillas) (x(31,j) + x(32,j)) = 1
+
+!Ficha con forma de barra de 4 celdas
+!         
+!	 ****
+!	
+sum(j in Casillas) (x(33,j) + x(34,j)) = 1
+
+!Ficha con forma de bloque de 4 celdas
+!         
+!	 **
+!    **
+sum(j in Casillas) x(35,j) = 1
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Restricciones para evitar que la figura se salga del borde
+
+! Ficha 1
+forall(i in 0..5) do
+	x(1,5 + (i*6)) + x(1,6 + (i*6)) <= 0
+end-do
+sum(j in 31..34) x(1,j) <= 0
+
+! Ficha 2
+sum(j in 1..4) x(2,j) <= 0
+forall(i in 0..5) do
+	x(2,5 + (i*6)) + x(2,6 + (i*6)) <= 0
+end-do
+
+! Ficha 3
+forall(i in 0..5) do
+	x(3,1 + (i*6)) + x(3,2 + (i*6)) <= 0
+end-do
+sum(j in 3..6) x(3,j) <= 0
+
+! Ficha 4
+forall(i in 0..5) do
+	x(4,1 + (i*6)) + x(4,2 + (i*6)) <= 0
+end-do
+sum(j in 33..36) x(4,j) <= 0
+
+! Ficha 5
+forall(i in 0..3) do
+	x(5,1+(i*6)) <= 0
+end-do
+sum(j in 25..36) x(5,j) <= 0
+
+! Ficha 6
+forall(i in 1..4) do
+	x(6,i*6) <= 0
+end-do
+sum(j in 25..36) x(6,j) <= 0
+
+! Ficha 7
+sum(j in 1..12) x(7,j) <= 0
+forall(i in 0..3) do
+	x(7,13 + (i*6)) <= 0
+end-do
+
+! Ficha 8
+sum(j in 1..12) x(8,j) <= 0
+forall(i in 0..3) do
+	x(8,18 + (i*6)) <= 0
+end-do
+
+! Ficha 9
+forall(i in 0..5) do
+	x(9,5 + (i*6)) + x(9,6 + (i*6)) <= 0
+end-do
+sum(j in 31..34) x(9,j) <= 0
+
+! Ficha 10
+sum(j in 1..4) x(10,j) <= 0
+forall(i in 0..5) do
+	x(10,5 + (i*6)) + x(10,6 + (i*6)) <= 0
+end-do
+
+! Ficha 11
+forall(i in 0..3) do
+	x(11,1 + (6*i)) <= 0
+end-do
+sum(j in 25..36) x(11,j) <= 0
+
+! Ficha 12
+forall(i in 1..4) do
+	x(12,6*i) <= 0
+end-do
+sum(j in 25..36) x(12,j) <= 0
+
+! Ficha 13
+sum(j in 31..34) x(13,j) <= 0
+forall(i in 0..5) do
+	x(13,5 + (i*6)) + x(13,6 + (i*6)) <= 0
+end-do
+
+! Ficha 14
+sum(j in 1..4) x(14,j) <= 0
+forall(i in 0..5) do
+	x(14,5 + (i*6)) + x(14,6 + (i*6)) <= 0
+end-do
+
+! Ficha 15
+forall(i in 0..3) do
+	x(15,1 + (i*6)) <= 0
+end-do
+sum(j in 25..36) x(15,j) <= 0
+
+! Ficha 16
+forall(i in 1..4) do
+	x(16,i*6) <= 0
+end-do
+sum(j in 25..36) x(16,j) <= 0
+
+! Ficha 17
+sum(j in 1..5) x(17,j) <= 0
+forall(i in 1..6) do
+	x(17,i*6) <= 0
+end-do
+
+! Ficha 18
+forall(i in 1..6) do
+	x(18,i*6) <= 0
+end-do
+sum(j in 31..35) x(18,j) <= 0
+
+! Ficha 19
+forall(i in 0..4) do
+	x(19,1+ (i*6)) <= 0
+end-do
+sum(j in 31..36) x(19,j) <= 0
+
+! Ficha 20
+forall(i in 1..5) do
+	x(20,i*6) <= 0
+end-do
+sum(j in 31..36) x(20,j) <= 0
+
+! Ficha 21
+forall(i in 1..6) do
+	x(21,i*6) <= 0
+end-do
+
+! Ficha 22
+sum(j in 31..36) x(22,j) <= 0
+
+! Ficha 23
+forall(i in 0..5) do
+	x(23,5+(i*6)) + x(23,6+(i*6)) <= 0
+end-do
+
+! Ficha 24
+sum(j in 25..36) x(24,j) <= 0
+
+! 25 y 26 se pueden ubicar en cualquier casilla
+
+! Ficha 27
+forall(i in 1..6) do
+	x(27,i*6) <= 0
+end-do
+
+! Ficha 28
+sum(j in 31..36) x(28,j) <= 0
+
+! 29 y 30 se pueden ubicar en cualquier casilla
+
+! Ficha 31
+forall(i in 1..6) do
+	x(31,i*6) <= 0
+end-do
+
+! Ficha 32
+sum(j in 31..36) x(32,j) <= 0
+
+! Ficha 33
+forall(i in 0..5) do
+	x(33,4 + (6*i)) + x(33,5+(6*i)) + x(33,6 +(6*i)) <= 0
+end-do
+
+! Ficha 34
+sum(j in 19..36) x(34,j) <= 0
+
+! Ficha 35
+forall(i in 1..6) do
+	x(35,6*i)<= 0
+end-do
+sum(j in 31..35) x(35,j) <= 0
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Restricciones de la forma de las figuras
+
+! Ficha de forma en L  ***
+!                      *       
+! Ficha 1
+L:=[1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(1,k+j)+ y(1,k+j+6) + y(1,k+j+7) + y(1,k+j+8) -4*x(1,k+j) >= 0
+		d(k+j)+ d(k+j+6) + d(k+j+7) + d(k+j+8) <= 4*x(1,k+j)*p(1) + (1-x(1,k+j))*8
+		d(k+j)+ d(k+j+6) + d(k+j+7) + d(k+j+8) >= 4*x(1,k+j)*p(1)
+	end-do
+end-do
+
+! Ficha 2
+L:=[7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(2,k+j)+ y(2,k+j-6) + y(2,k+j-5) + y(2,k+j-4) -4*x(2,k+j) >= 0
+		d(k+j)+ d(k+j-6) + d(k+j-5) + d(k+j-4) <= 4*x(2,k+j)*p(2) + (1-x(2,k+j))*8
+		d(k+j)+ d(k+j-6) + d(k+j-5) + d(k+j-4) >= 4*x(2,k+j)*p(2)
+	end-do
+end-do
+
+! Ficha 3
+L:=[9,15,21,27,33]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(3,k+j)+ y(3,k+j-6) + y(3,k+j-7) + y(3,k+j-8) -4*x(3,k+j) >= 0
+		d(k+j)+ d(k+j-6) + d(k+j-7) + d(k+j-8) <= 4*x(3,k+j)*p(3) + (1-x(3,k+j))*8
+		d(k+j)+ d(k+j-6) + d(k+j-7) + d(k+j-8) >= 4*x(3,k+j)*p(3)
+	end-do
+end-do
+
+! Ficha 4
+L:=[3,9,15,21,27]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(4,k+j)+ y(4,k+j+4) + y(4,k+j+5) + y(4,k+j+6) -4*x(4,k+j) >= 0
+		d(k+j)+ d(k+j+4) + d(k+j+5) + d(k+j+6) <= 4*x(4,k+j)*p(4) + (1-x(4,k+j))*8
+		d(k+j)+ d(k+j+4) + d(k+j+5) + d(k+j+6) >= 4*x(4,k+j)*p(4)
+	end-do
+end-do
+
+! Ficha 5
+L:=[2,8,14,20]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(5,k+j-1)+ y(5,k+j) + y(5,k+j+5) + y(5,k+j+11) -4*x(5,k+j) >= 0
+		d(k+j-1)+ d(k+j) + d(k+j+5) + d(k+j+11) <= 4*x(5,k+j)*p(5) + (1-x(5,k+j))*8
+		d(k+j-1)+ d(k+j) + d(k+j+5) + d(k+j+11) >= 4*x(5,k+j)*p(5)
+	end-do
+end-do
+
+! Ficha 6
+L:=[1,7,13,19]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(6,k+j)+ y(6,k+j+1) + y(6,k+j+7) + y(6,k+j+13) -4*x(6,k+j) >= 0
+		d(k+j)+ d(k+j+1) + d(k+j+7) + d(k+j+13) <= 4*x(6,k+j)*p(6) + (1-x(6,k+j))*8
+		d(k+j)+ d(k+j+1) + d(k+j+7) + d(k+j+13) >= 4*x(6,k+j)*p(6)
+	end-do
+end-do
+
+! Ficha 7
+L:=[14,20,26,32]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(7,k+j-13)+ y(7,k+j-7) + y(7,k+j-1) + y(7,k+j) -4*x(7,k+j) >= 0
+		d(k+j-13)+ d(k+j-7) + d(k+j-1) + d(k+j) <= 4*x(7,k+j)*p(7) + (1-x(7,k+j))*8
+		d(k+j-13)+ d(k+j-7) + d(k+j-1) + d(k+j) >= 4*x(7,k+j)*p(7)
+	end-do
+end-do
+
+! Ficha 8
+L:=[13,19,25,31]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(8,k+j-11)+ y(8,k+j-5) + y(8,k+j) + y(8,k+j+1) -4*x(8,k+j) >= 0
+		d(k+j-11)+ d(k+j-5) + d(k+j) + d(k+j+1) <= 4*x(8,k+j)*p(8) + (1-x(8,k+j))*8
+		d(k+j-11)+ d(k+j-5) + d(k+j) + d(k+j+1) >= 4*x(8,k+j)*p(8)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha  * 
+!       *** 
+
+! Ficha 9
+L := [1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(9,k+j) + y(9,k+j+1) + y(9,k+j+2) + y(9,k+j+7) - 4*x(9,k+j) >= 0
+		d(k+j) + d(k+j+1) + d(k+j+2) + d(k+j+7) <= 4*x(9,k+j)*p(9) + (1-x(9,k+j))*8
+		d(k+j) + d(k+j+1) + d(k+j+2) + d(k+j+7) >= 4*x(9,k+j)*p(9)
+	end-do
+end-do
+
+! Ficha 10
+L := [7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(10,k+j) + y(10,k+j+1) + y(10,k+j+2) + y(10,k+j-5) - 4*x(10,k+j) >= 0
+		d(k+j) + d(k+j+1) + d(k+j+2) + d(k+j-5) <= 4*x(10,k+j)*p(10) + (1-x(10,k+j))*8
+		d(k+j) + d(k+j+1) + d(k+j+2) + d(k+j-5) >= 4*x(10,k+j)*p(10)
+	end-do
+end-do
+
+! Ficha 11
+L:=[2,8,14,20]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(11,k+j) + y(11,k+j+5) + y(11,k+j+6) + y(11,k+j+12) - 4*x(11,k+j) >= 0
+		d(k+j) + d(k+j+5) + d(k+j+6) + d(k+j+12) <= 4*x(11,k+j)*p(11) + (1-x(11,k+j))*8
+		d(k+j) + d(k+j+5) + d(k+j+6) + d(k+j+12) >= 4*x(11,k+j)*p(11)
+	end-do
+end-do
+
+! Ficha 12
+L := [1,7,13,19]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(12,k+j) + y(12,k+j+6) + y(12,k+j+7) + y(12,k+j+12) - 4*x(12,k+j) >= 0
+		d(k+j) + d(k+j+6) + d(k+j+7) + d(k+j+12) <= 4*x(12,k+j)*p(12) + (1-x(12,k+j))*8
+		d(k+j) + d(k+j+6) + d(k+j+7) + d(k+j+12) >= 4*x(12,k+j)*p(12)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha  con forma de S  **    **
+!                         **  **
+
+! Ficha 13
+L := [1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(13,k+j) + y(13,k+j+1) + y(13,k+j+7) + y(13,k+j+8) - 4*x(13,k+j) >= 0
+		d(k+j) + d(k+j+1) + d(k+j+7) + d(k+j+8) <= 4*x(13,k+j)*p(13) + (1-x(13,k+j))*8
+		d(k+j) + d(k+j+1) + d(k+j+7) + d(k+j+8) >= 4*x(13,k+j)*p(13)
+	end-do
+end-do
+
+! Ficha 14
+L := [7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(14,k+j-5) + y(14,k+j-4) + y(14,k+j) + y(14,k+j+1) - 4*x(14,k+j) >= 0
+		d(k+j-5) + d(k+j-4) + d(k+j) + d(k+j+1) <= 4*x(14,k+j)*p(14) + (1-x(14,k+j))*8
+		d(k+j-5) + d(k+j-4) + d(k+j) + d(k+j+1) >= 4*x(14,k+j)*p(14)
+	end-do
+end-do
+
+! Ficha 15
+L:=[2,8,14,20]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(15,k+j) + y(15,k+j+5) + y(15,k+j+6) + y(15,k+j+11) - 4*x(15,k+j) >= 0
+		d(k+j) + d(k+j+5) + d(k+j+6) + d(k+j+11) <= 4*x(15,k+j)*p(15) + (1-x(15,k+j))*8
+		d(k+j) + d(k+j+5) + d(k+j+6) + d(k+j+11) >= 4*x(15,k+j)*p(15)
+	end-do
+end-do
+
+! Ficha 16
+L := [1,7,13,19]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(16,k+j) + y(16,k+j+6) + y(16,k+j+7) + y(16,k+j+13) - 4*x(16,k+j) >= 0
+		d(k+j) + d(k+j+6) + d(k+j+7) + d(k+j+13) <= 4*x(16,k+j)*p(16) + (1-x(16,k+j))*8
+		d(k+j) + d(k+j+6) + d(k+j+7) + d(k+j+13) >= 4*x(16,k+j)*p(16)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha  con forma de esquina  **  **   *     *
+!                              *    *   **   **
+
+! Ficha 17
+L := [7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(17,k+j-5) + y(17,k+j) + y(17,k+j+1) - 3*x(17,k+j) >= 0
+		d(k+j-5) + d(k+j) + d(k+j+1)  <= 3*x(17,k+j)*p(17) + (1-x(17,k+j))*6
+		d(k+j-5) + d(k+j) + d(k+j+1)  >= 3*x(17,k+j)*p(17) 
+	end-do
+end-do
+
+! Ficha 18
+L := [1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(18,k+j) + y(18,k+j+6) + y(18,k+j+7) - 3*x(18,k+j) >= 0
+		d(k+j) + d(k+j+6) + d(k+j+7) <= 3*x(18,k+j)*p(18) + (1-x(18,k+j))*6
+		d(k+j) + d(k+j+6) + d(k+j+7) >= 3*x(18,k+j)*p(18)
+	end-do
+end-do
+
+! Ficha 19
+L:=[2,8,14,20,26]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(19,k+j-1) + y(19,k+j) + y(19,k+j+5)  - 3*x(19,k+j) >= 0
+		d(k+j-1) + d(k+j) + d(k+j+5) <= 3*x(19,k+j)*p(19) + (1-x(19,k+j))*6
+		d(k+j-1) + d(k+j) + d(k+j+5) >= 3*x(19,k+j)*p(19) 
+	end-do
+end-do
+
+! Ficha 20
+L := [1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(20,k+j) + y(20,k+j+1) + y(20,k+j+7)  - 3*x(20,k+j) >= 0
+		d(k+j) + d(k+j+1) + d(k+j+7) <= 3*x(20,k+j)*p(20) + (1-x(20,k+j))*6
+		d(k+j) + d(k+j+1) + d(k+j+7) >= 3*x(20,k+j)*p(20)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha barra de 2 celdas **
+
+! Ficha 21
+L := [1,7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(21,k+j)+ y(21,k+j+1) - 2*x(21,k+j) >= 0
+		d(k+j)+ d(k+j+1) <= 2*x(21,k+j)*p(21) + (1-x(21,k+j))*4
+		d(k+j) + d(k+j+1) >=2*x(21,k+j)*p(21)
+	end-do
+end-do
+
+! Ficha 22
+L := [1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..5) do
+		y(22,k+j)+ y(22,k+j+6) - 2*x(22,k+j) >= 0
+		d(k+j)+ d(k+j+6) <= 2*x(22,k+j)*p(22) + (1-x(22,k+j))*4
+		d(k+j)+ d(k+j+6) >= 2*x(22,k+j)*p(22)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha barra de 3 celdas ***
+
+! Ficha 23
+L := [1,7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..3) do
+		y(23,k+j) + y(23,k+j+1) + y(23,k+j+2) - 3*x(23,k+j) >= 0
+		d(k+j) + d(k+j+1) + d(k+j+2) <= 3*x(23,k+j)*p(23) + (1-x(23,k+j))*6
+		d(k+j) + d(k+j+1) + d(k+j+2) >= 3*x(23,k+j)*p(23)
+	end-do
+end-do
+
+! Ficha 24
+L := [1,7,13,19]
+forall(j in L) do
+	forall(k in 0..5) do
+		y(24,k+j)+ y(24,k+j+6) + y(24,k+j+12) - 3*x(24,k+j) >= 0
+		d(k+j)+ d(k+j+6) + d(k+j+12) <= 3*x(24,k+j)*p(24) + (1-x(24,k+j))*6
+		d(k+j)+ d(k+j+6) + d(k+j+12) >= 3*x(24,k+j)*p(24)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha 25 y 26 sin restricciones
+! Ficha 25
+forall(k in 1..36) do
+	y(25,k) - x(25,k) >= 0
+	d(k) <= x(25,k)*p(25) + (1-x(25,k))*2
+	d(k) >= x(25,k)*p(25)
+	
+	y(26,k) - x(26,k) >= 0
+	d(k) <= x(26,k)*p(26) + (1-x(26,k))*2
+	d(k) >= x(26,k)*p(26)
+end-do
+
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha barra de 2 celdas **
+
+! Ficha 27
+L := [1,7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(27,k+j)+ y(27,k+j+1) - 2*x(27,k+j) >= 0
+		d(k+j)+ d(k+j+1) <= 2*x(27,k+j)*p(27) + (1-x(27,k+j))*4
+		d(k+j)+ d(k+j+1) >= 2*x(27,k+j)*p(27)
+	end-do
+end-do
+
+! Ficha 28
+L := [1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..5) do
+		y(28,k+j)+ y(28,k+j+6) - 2*x(28,k+j) >= 0
+		d(k+j)+ d(k+j+6) <= 2*x(28,k+j)*p(28) + (1-x(28,k+j))*4
+		d(k+j)+ d(k+j+6) >= 2*x(28,k+j)*p(28)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha 29 y 30
+forall(k in 1..36) do
+	y(29,k) - x(29,k) >= 0
+	d(k) <= x(29,k)*p(29) + (1-x(29,k))*2
+	d(k) >= x(29,k)*p(29)
+	
+	y(30,k) - x(30,k) >= 0
+	d(k) <= x(30,k)*p(30) + (1-x(30,k))*2
+	d(k) >= x(30,k)*p(30)
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha barra de 2 celdas **
+
+! Ficha 31
+L := [1,7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(31,k+j)+ y(31,k+j+1) - 2*x(31,k+j) >= 0
+		d(k+j)+ d(k+j+1) <= 2*x(31,k+j)*p(31) + (1-x(31,k+j))*4
+		d(k+j) + d(k+j+1) >=2*x(31,k+j)*p(31)
+	end-do
+end-do
+
+! Ficha 32
+L := [1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..5) do
+		y(32,k+j)+ y(32,k+j+6) - 2*x(32,k+j) >= 0
+		d(k+j)+ d(k+j+6) <= 2*x(32,k+j)*p(32) + (1-x(32,k+j))*4
+		d(k+j)+ d(k+j+6) >= 2*x(32,k+j)*p(32)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha barra de 4 celdas ****
+
+! Ficha 33
+L := [1,7,13,19,25,31]
+forall(j in L) do
+	forall(k in 0..2) do
+		y(33,k+j)+ y(33,k+j+1) + y(33,k+j+2) + y(33,k+j+3) -4*x(33,k+j) >= 0
+		d(k+j)+ d(k+j+1) + d(k+j+2) + d(k+j+3) <= 4*x(33,k+j)*p(33) + (1-x(33,k+j))*8
+		d(k+j)+ d(k+j+1) + d(k+j+2) + d(k+j+3) >= 4*x(33,k+j)*p(33)
+	end-do
+end-do
+
+! Ficha 34
+L := [1,7,13]
+forall(j in L) do
+	forall(k in 0..5) do
+		y(34,k+j)+ y(34,k+j+6) + y(34,k+j+12) + y(34,k+j+18) -4*x(34,k+j) >= 0
+		d(k+j)+ d(k+j+6) + d(k+j+12) + d(k+j+18) <= 4*x(34,k+j)*p(34) + (1-x(34,k+j))*8
+		d(k+j)+ d(k+j+6) + d(k+j+12) + d(k+j+18) >= 4*x(34,k+j)*p(34)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Ficha cuadrado de 4 celdas  **
+!                             **  
+
+! Ficha 35
+L:=[1,7,13,19,25]
+forall(j in L) do
+	forall(k in 0..4) do
+		y(35,k+j)+ y(35,k+j+1) + y(35,k+j+6) + y(35,k+j+7) -4*x(35,k+j) >= 0
+		d(k+j)+ d(k+j+1) + d(k+j+6) + d(k+j+7) <= 4*x(35,k+j)*p(35) + (1-x(35,k+j))*8
+		d(k+j)+ d(k+j+1) + d(k+j+6) + d(k+j+7) >= 4*x(35,k+j)*p(35)
+	end-do
+end-do
+
+! -----------------------------------------------------------------------------------
+! -----------------------------------------------------------------------------------
+! Funci�n objetivo
+fo := 0
+
+! Optimizar
+maximize(fo)
+
+imprimir
+!imprimir_casillas
+
+!Imprimir en consola
+c:=0
+procedure imprimir
+	writeln("=== ficha === casilla===")
+	forall(j in Casillas) do
+		forall(i in Fichas) do
+			if(getsol(x(i,j)))>0 then
+				writeln("    ",i,"          ",j)
+				!writeln("______________________")
+				c:= c+1
+			end-if
+		end-do
+	end-do
+	writeln("Se asignaron ",c," piezas.")
+	writeln("")
+end-procedure
+
+fopen(outputFile,F_OUTPUT)
+	k:=0
+	m:=0
+	write("sol=[")
+	forall(j in Casillas) do
+		if(j <=6) then
+			k:=j-1
+			m:=5
+		elif(j>6 and j<=12) then
+			k:=j-7
+			m:=4
+		elif(j>12 and j<=18) then
+			k:=j-13
+			m:=3
+		elif(j>18 and j<=24) then
+			k:=j-19
+			m:=2
+		elif(j>24 and j<=30) then
+			k:=j-25
+			m:=1
+		else
+			k:=j-31
+			m:=0
+		end-if
+		
+		if(getsol(x(1,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (0, -1), (1, -1), (2,-1)},'blue'),")
+		end-if
+		
+		if(getsol(x(2,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (0, 1), (1, 1), (2,1)},'blue'),")
+		end-if
+		
+		if(getsol(x(3,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (0, 1), (-1, 1), (-2,1)},'blue'),")
+		end-if
+		
+		if(getsol(x(4,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (0, -1), (-1, -1), (-2,-1)},'blue'),")
+		end-if
+		
+		if(getsol(x(5,j))>0) then
+			writeln("(",k,",",m,",[(0, 0),(-1, 0),(-1, -1),(-1, -2)],'blue'),")
+		end-if
+		
+		if(getsol(x(6,j))>0) then
+			writeln("(",k,",",m,",[(0, 0),(1, 0),(1, 1),(1, 2)],'blue'),")
+		end-if
+		
+		if(getsol(x(7,j))>0) then
+			writeln("(",k,",",m,",[(0, 0),(-1, 0),(-1, 1),(-1, 2)],'blue'),")
+		end-if
+		
+		if(getsol(x(8,j))>0) then
+			writeln("(",k,",",m,",[(0, 0),(1, 0),(1, 1),(1, 2)],'blue'),")
+		end-if
+		
+		if(getsol(x(9,j))>0) then
+			writeln("(",k,",",m,",{(0, 0),(1, -1),(1, 0),(2, 0)},'blue'),")
+		end-if
+		
+		if(getsol(x(10,j))>0) then
+			writeln("(",k,",",m,",{(0, 0),(1, 1),(1, 0),(2, 0)},'blue'),")
+		end-if
+		
+		if(getsol(x(11,j))>0) then
+			writeln("(",k,",",m,",{(0, 0),(-1, -1),(0, -1),(0, -2)},'blue'),")
+		end-if
+		
+		if(getsol(x(12,j))>0) then
+			writeln("(",k,",",m,",{(0, 0),(0, -1),(1, -1),(0, -2)},'blue'),")
+		end-if
+		
+		if(getsol(x(13,j))>0) then
+			writeln("(",k,",",m,",{(0, 0),(1, 0),(1, -1),(2, -1)},'blue'),")
+		end-if
+		
+		if(getsol(x(14,j))>0) then
+			writeln("(",k,",",m,",{(0, 0),(1, 0),(1, 1),(2, 1)},'blue'),")
+		end-if
+		
+		if(getsol(x(15,j))>0) then
+			writeln("(",k,",",m,",{(0, 0),(0, -1),(-1, -1),(-1, -2)},'blue'),")
+		end-if
+		
+		if(getsol(x(16,j))>0) then
+			writeln("(",k,",",m,",[(0, 0),(0, -1),(1, -1),(1, -2)],'blue'),")
+		end-if
+		
+		if(getsol(x(17,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (1, 0), (1, 1)},'blue'),")
+		end-if
+		
+		if(getsol(x(18,j))>0) then
+			writeln("(",k,",",m,",[(0, 0), (0, -1), (1,-1)],'blue'),")
+		end-if
+		
+		if(getsol(x(19,j))>0) then
+			writeln("(",k,",",m,",[(0, 0), (-1, 0), (-1,-1)],'blue'),")
+		end-if
+		
+		if(getsol(x(20,j))>0) then
+			writeln("(",k,",",m,",[(0, 0), (1, 0), (1,-1)],'blue'),")
+		end-if
+		
+		if(getsol(x(21,j))>0) then
+			writeln("(",k,",",m,",[(0, 0), (1, 0)],'blue'),")
+		end-if
+		
+		if(getsol(x(22,j))>0) then
+			writeln("(",k,",",m,", [(0, 0),(0, -1)],'blue'),")
+		end-if
+		
+		if(getsol(x(23,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (1, 0), (2,0)},'blue'),")
+		end-if
+		
+		if(getsol(x(24,j))>0) then
+			writeln("(",k,",",m,",[(0, 0), (0, -1), (0, -2)],'blue'),")
+		end-if
+		
+		if(getsol(x(25,j))>0) then
+			writeln("(",k,",",m,",[(0, 0)],'green'),")
+		end-if
+		
+		if(getsol(x(26,j))>0) then
+			writeln("(",k,",",m,",[(0, 0)],'green'),")
+		end-if
+		
+		if(getsol(x(27,j))>0) then
+			writeln("(",k,",",m,",{(1, 0), (0, 0)},'green'),")
+		end-if
+		
+		if(getsol(x(29,j))>0) then
+			writeln("(",k,",",m,",[(0, 0)],'green'),")
+		end-if
+		
+		if(getsol(x(30,j))>0) then
+			writeln("(",k,",",m,",[(0, 0)],'green'),")
+		end-if
+		
+		if(getsol(x(31,j))>0) then
+			writeln("(",k,",",m,",[(0, 0), (1, 0)],'green'),")
+		end-if
+		
+		if(getsol(x(32,j))>0) then
+			writeln("(",k,",",m,",[(0, 0),(0,-1)],'green'),")
+		end-if
+		
+		if(getsol(x(33,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (1, 0), (2, 0), (3, 0)},'blue'),")
+		end-if
+		
+		if(getsol(x(34,j))>0) then
+			writeln("(",k,",",m,",{(0, 0), (0, -1), (0, -2), (0, -3)},'blue'),")
+		end-if
+		
+		if(getsol(x(35,j))>0) then
+			writeln("(",k,",",m,",{(0,0), (0, -1), (1, 0), (1, -1)},'blue'),")
+		end-if
+			
+	end-do
+	write("]")
+fclose(F_OUTPUT)
+
+end-model

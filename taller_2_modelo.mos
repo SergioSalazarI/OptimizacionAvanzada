@@ -1,0 +1,70 @@
+!@encoding CP1252
+model ModelName
+uses "mmxprs"; 
+
+forward procedure imprimir
+
+declarations
+	E: set of string !Excursionistas
+	O: set of string !Objetos
+	
+	! Parámetros del modelo
+	b: array(E) of integer !Peso máximo del excursionisa i en E.
+	p: array(O) of integer !Peso del objeto j en O.
+	q: array(E,O) of integer !Preferencias del excusionista i en E sobre el objeto j en O.
+	
+	! Varaibles de decisión
+	x: array(E,O) of mpvar ! 1 si i lleva a j, 0 de lo contrario
+	
+end-declarations
+
+inputFile := 'Excursionistas.txt'
+outputFile := 'Resultados.txt'
+
+initializations from inputFile
+	b	p	q
+end-initializations
+
+! Creación de las variables
+forall(i in E, j in O) do
+	create(x(i,j))
+	x(i,j) is_binary
+end-do
+
+! Restricciones del modelo
+
+! Capacidad de carga de cada excursionista
+forall(i in E) do
+	sum(j in O)p(j)*x(i,j) <= b(i)
+end-do
+
+! Debemos llevar todos los objetos
+forall(j in O) do
+	sum(i in E)x(i,j) = 1
+end-do
+
+! Función objetivo
+fo := sum(i in E, j in O) x(i,j)*q(i,j)
+
+! Optimizar
+maximize(fo)
+
+imprimir
+
+!Imprimir en consola
+procedure imprimir
+	forall(j in O) do
+		forall(i in E) do
+			if(getsol(x(i,j)))>0 then
+				writeln("El objeto ",j," es llevado por el excursionista ",i)
+			end-if
+		end-do
+	end-do
+end-procedure
+
+fopen(outputFile,F_OUTPUT)
+	writeln('Función objetivo: ',getobjval)
+fclose(F_OUTPUT)
+
+end-model
+
