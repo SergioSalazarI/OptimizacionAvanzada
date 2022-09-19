@@ -17,13 +17,17 @@ df.set_index("Lugar", inplace=True)
 L = df.index.tolist()
 distance = {}
 
-# bateria de un camion
-global B
-B = 34
+# Número de camiones a disposición
+global C
+C = 34
 
 # capacidad de un camion
 global K
 K = 20
+
+# bateria de un camion
+global B
+B = 34
 
 # Calcular distancias
 for i in range(26):
