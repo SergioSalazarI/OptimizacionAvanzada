@@ -327,5 +327,5 @@ while (exceso_capacidad or exceso_energia or hay_ciclos) and i<100:
     i = i + 1
 
 # Almacenar la solución en formato .xlsx
-#dic.to_excel("resultado_inicial.xlsx")
+#dic.to_excel("resultados.xlsx")
 plot_rutas(rutas)
