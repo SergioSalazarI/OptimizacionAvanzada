@@ -68,30 +68,8 @@ m.setObjective(quicksum(distance[i,j]*x[i,j] for i in L for j in L),GRB.MINIMIZE
 # no mostrar el optimizador completo
 m.update()
 
+# reconoce todas las rutas generadas por el optimizador
 def calcular_rutas(i:int):
-    r = []
-    inicio = rutas[i][0]
-    fin = rutas[i][1]
-    r.extend((inicio,fin))  #r.append(inicio)  #r.append(fin)
-    
-    terminar = False
-    j = i+5
-    
-    while (terminar != True) and (j<30):
-        inicio = rutas[j][0]
-        siguiente = rutas[j][1]
-        if inicio==fin and siguiente=="Depósito":
-            terminar=True
-            r.append("Depósito")
-        elif inicio==fin:
-            r.append(siguiente)
-            fin = siguiente
-            j = i+5
-        else:
-            j = j+1
-    return r
-
-def calcular_todas_rutas(i:int):
     r = []
     inicio = rutas[i][0]
     fin = rutas[i][1]
@@ -114,6 +92,7 @@ def calcular_todas_rutas(i:int):
             j = j+1
     return r
 
+# calcula la distancia recorrida por una ruta
 def calcular_distancias(r:list):
     distancias = []
     for ruta in r:
@@ -123,7 +102,11 @@ def calcular_distancias(r:list):
         distancias.append(dist)
     return distancias
 
+# calcula la demanda de cada ruta
 def calcular_demanda(r:list):
+    """
+    r[list]: rutas definidas por el optimizador
+    """
     demanda = []
     for ruta in r:
         dist = 0
@@ -132,21 +115,33 @@ def calcular_demanda(r:list):
         demanda.append(dist)
     return demanda
 
+# genera el reporte de la solucion
+def generar_reporte(rutas):
+    rutas = [calcular_rutas(i) for i in range(26)]
+    rutas = [i for i in rutas if i[0]==i[-1]]
+    num = [i+1 for i in range(len(rutas))]
+    energia = [ i*1.5 for i in calcular_distancias(rutas)]
+    demanda = calcular_demanda(rutas)
+
+    dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
+    dic = pd.DataFrame.from_dict(dic)
+    dic.set_index("Ruta", inplace=True)
+    
+    return dic
+
+# transforma las rutas en formato dataFrame
 def rutas_to_dataFrame(r:list):
+    """
+    r[list]: rutas definidas por el optimizador
+    """
     dic = {"from":[],"to":[]}
     for ruta in r:
         for i in range(len(ruta)-1):
             dic["from"].append(ruta[i])
             dic["to"].append(ruta[i+1])
     return dic
-
-def ruta_to_dataFrame(r:list):
-    dic = {"from":[],"to":[]}
-    for i in range(len(r)-1):
-        dic["from"].append(r[i])
-        dic["to"].append(r[i+1])
-    return dic
-    
+ 
+ # genera el grafo de la solución   
 def plot_rutas(r:list):
     dic = rutas_to_dataFrame(r)
     dic = pd.DataFrame(dic)
@@ -166,17 +161,8 @@ rutas = []
 for i,j in x.keys():
     if x[i,j].x>0:
         rutas.append((i,j))
-        
-rutas = [calcular_todas_rutas(i) for i in range(26)]
-rutas = [i for i in rutas if i[0]==i[-1]]
-num = [i+1 for i in range(len(rutas))]
-energia = [ i*1.5 for i in calcular_distancias(rutas)]
-demanda = calcular_demanda(rutas)
 
-dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
-dic = pd.DataFrame.from_dict(dic)
-dic.set_index("Ruta", inplace=True)
-
+dic = generar_reporte(rutas)
 print(dic)
 print(z)
 print(np.sum(calcular_distancias(rutas)))
