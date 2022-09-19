@@ -27,17 +27,19 @@ K = 20
 
 # Calcular distancias
 for i in range(26):
-    
+    # latitud y longitud del lugar 1
     lat_1 = df.iloc[i,0]
     long_1 = df.iloc[i,1]
     
     for j in range(26):
+        # latitud y longitud del lugar 2
         lat_2 = df.iloc[j,0] 
         long_2 = df.iloc[j,1]
         
         root = np.sin(np.deg2rad((lat_2-lat_1)/2))**2 + np.cos(np.deg2rad(lat_1))*np.cos(np.deg2rad(lat_2))*(np.sin(np.deg2rad((long_2-long_1)/2))**2)
         root = np.sqrt(root)
         
+        #distancia entre el lugar 1 y 2
         d = 2*6378*np.arcsin(root)
         distance[(L[i],L[j])] = d
 
@@ -46,6 +48,7 @@ d = {}
 for i in range(26):
     d[L[i]] = df.iloc[i,2]
 
+# crear el modelo de optimización
 m = Model("MVRP");
 x = m.addVars(L,L,vtype=GRB.BINARY,name='x')
 
@@ -59,6 +62,8 @@ for i in L[1:]:
 
 # Del depósito salen K camiones. K=5
 m.addConstr(quicksum(x[L[0],j] for j in L[1:])==5)
+
+# el arco depósito-depósito es cero.
 m.addConstr(x[L[0],L[0]]==0)
 
 # Al depósito ingresan k camiones. K=5
@@ -76,8 +81,17 @@ m.setObjective(quicksum(distance[i,j]*x[i,j] for i in L for j in L),GRB.MINIMIZE
 m.setParam("Outputflag",0)
 m.update()
 
-# reconoce todas las rutas generadas por el optimizador
 def calcular_rutas(rutas:list,i:int):
+    """
+    Reconoce todas las rutas generadas por el optimizador
+    _____________________________________
+    Parámetros
+    rutas[list]: lista con los arcos de la forma (i,j) generados por el optimizador.
+    i[int]: Posición de inicio del generador de la ruta.
+    _____________________________________
+    Sálida
+    r[list]: Lista con la ruta que contiene el arco i.
+    """
     r = []
     inicio = rutas[i][0]
     fin = rutas[i][1]
@@ -100,8 +114,16 @@ def calcular_rutas(rutas:list,i:int):
             j = j+1
     return r
 
-# calcula la distancia recorrida por una ruta
 def calcular_distancias(r:list):
+    """
+    Calcula la distancia que se recorre en cada ruta.
+    _____________________________________
+    Parámetros
+    r[list]: lista con las rutas generadas por el optimizador.
+    _____________________________________
+    Sálida
+    distancias[list]: Lista que contiene la distancia que recorre cada ruta.
+    """
     distancias = []
     for ruta in r:
         dist = 0
@@ -110,18 +132,31 @@ def calcular_distancias(r:list):
         distancias.append(dist)
     return distancias
 
-# calcula la demanda de cada ruta
 def calcular_demanda(r:list):
     """
-    r[list]: rutas definidas por el optimizador
+    Calcula la demanda total de la ruta r.
+    _____________________________________
+    Parámetros
+    r[list]: Lista con los lugares que visita una ruta.
+    _____________________________________
+    Sálida
+    demanda[int]: Demanda total de los lugares que visita la ruta.
     """
     demanda = 0
     for i in range(len(r)-1):
         demanda = demanda + d[r[i]]
     return demanda
 
-# genera el reporte de la solucion
 def generar_reporte(rutas:list):
+    """
+    Genera el reporte de la solucion.
+    _____________________________________
+    Parámetros
+    rutas[list]: lista con las rutas generadas por el optimizador.
+    _____________________________________
+    Sálida
+    dic[DataFrame]: Tabla que reporta la solución, i.e. formato Tabla 2.
+    """
     rutas = [calcular_rutas(rutas,i) for i in range(26)]
     rutas = [i for i in rutas if i[0]==i[-1]]
     num = [i+1 for i in range(len(rutas))]
@@ -134,10 +169,15 @@ def generar_reporte(rutas:list):
     
     return dic
 
-# transforma las rutas en formato dataFrame
 def rutas_to_dataFrame(r:list):
     """
-    r[list]: rutas definidas por el optimizador
+    Genera un dataFrame que indica los nodos de inicio y los nodos de fin.
+    _____________________________________
+    Parámetros
+    rutas[list]: lista con las rutas generadas por el optimizador.
+    _____________________________________
+    Sálida
+    dic[DataFrame]: Tabla que reporta el nodo de inicio (i) y el nodo de llegada (j) del arco (i,j).
     """
     dic = {"from":[],"to":[]}
     for ruta in r:
@@ -146,8 +186,16 @@ def rutas_to_dataFrame(r:list):
             dic["to"].append(ruta[i+1])
     return dic
  
- # genera el grafo de la solución   
 def plot_rutas(r:list):
+    """
+    Genera el grafo de la solución.
+    _____________________________________
+    Parámetros
+    rutas[list]: lista con las rutas generadas por el optimizador.
+    _____________________________________
+    Sálida
+    Gráfico de los lugares (nodos) y los arcos definidos por el optimizador.
+    """
     dic = rutas_to_dataFrame(r)
     dic = pd.DataFrame(dic)
     G=nx.from_pandas_edgelist(dic, 'from', 'to')
@@ -157,6 +205,14 @@ def plot_rutas(r:list):
     plt.show()
         
 def eliminar_exceso_capacidad(dic):
+    """
+    Genera restricciones para evitar el exceso de capacidad de una ruta.
+    _____________________________________
+    Parámetros
+    dic[DataFrame]: Tabla que reporta la solución, i.e. formato Tabla 2.
+    
+    Nota: Las restricciones limitan la demanda acumulada por una ruta.
+    """
     for row in range(dic.shape[0]):
         demanda = dic.iloc[row,2]
         if demanda > K:
@@ -164,6 +220,14 @@ def eliminar_exceso_capacidad(dic):
             m.addConstr(quicksum(d[j]*x[i,j] for i in secuencia[:-1] for j in secuencia[1:])<=K)
             
 def eliminar_exceso_capacidad_v2(dic):
+    """
+    Genera restricciones para evitar el exceso de capacidad de una ruta.
+    _____________________________________
+    Parámetros
+    dic[DataFrame]: Tabla que reporta la solución, i.e. formato Tabla 2.
+    
+    Nota: Las restricciones definen la cantidad de camiones que deben ingresar a una ruta.
+    """
     for row in range(dic.shape[0]):
         demanda = dic.iloc[row,2]
         if demanda > K and row <5:
@@ -176,10 +240,19 @@ def eliminar_exceso_capacidad_v2(dic):
             m.addConstr(quicksum(x[i,j] for i in L_copy for j in secuencia[1:-1])>=cota)
             
 def eliminar_exceso_energia(dic):
+    """
+    Genera restricciones para evitar que la batería del camión se agote.
+    _____________________________________
+    Parámetros
+    dic[DataFrame]: Tabla que reporta la solución, i.e. formato Tabla 2.
+    
+    Nota: Las restricciones definen la cantidad de camiones que deben ingresar a una ruta
+          de modo que el camión asignado no agote su batería.
+    """
     for row in range(dic.shape[0]):
         energia = dic.iloc[row,1]
         if energia > B and row<5:
-            print(f'La energia de {row} es: {energia}')
+            print(f'** La energia de la ruta {row+1} es: {energia}. Por tanto se debe cortar la ruta. **')
             secuencia = dic.iloc[row,0]
             cota = np.ceil(energia/B)
             
@@ -187,9 +260,17 @@ def eliminar_exceso_energia(dic):
             L_copy.extend(["Depósito"])
             
             m.addConstr(quicksum(x[i,j] for i in L_copy for j in secuencia[1:-1])>=cota)
-            #m.addConstr(quicksum(distance[i,j]*x[i,j] for i in secuencia for j in secuencia)*0.5<=B)
 
 def eliminar_ciclos(dic):
+    """
+    Genera restricciones para evitar ciclos que no cruzan por el depósito.
+    _____________________________________
+    Parámetros
+    dic[DataFrame]: Tabla que reporta la solución, i.e. formato Tabla 2.
+    
+    Nota: Las restricciones definen la cantidad de camiones que deben ingresar a una ruta
+          de modo que la ruta incluya el depósito.
+    """
     for row in range(5,dic.shape[0]):
         secuencia = dic.iloc[row,0]
         L_copy = [x for x in L if(x not in secuencia)]
@@ -198,40 +279,42 @@ def eliminar_ciclos(dic):
         m.addConstr(quicksum(x[i,j] for i in L_copy for j in secuencia[1:])>=cota)
 
 def correr_modelo():
+    """
+    Compila el modelo
+    _____________________________________
+    Parámetros
+    _____________________________________
+    Sálida
+    rutas[list]: lista con los arcos de la forma (i,j) generados por el optimizador.
+    """
     m.optimize()
     z = m.getObjective().getValue()
-    print(m.Status)
     rutas = []
     for i,j in x.keys():
         if x[i,j].x>0:
             rutas.append((i,j))
-    print(z)
-    print(np.sum(calcular_distancias(rutas)))
+    print(f'El Status del modelo es: {m.Status}')
+    print(f'La distancia total recorrida es:   {z} km')
+    print(f'La energía total consumida es:     {z*0.5} KWh')
     return rutas
 
-m.optimize()
-z = m.getObjective().getValue()
+# Boleanos que indican el estado del modelo
+exceso_capacidad = True
+exceso_energia = True
+hay_ciclos = True
 
-rutas = []
-
-for i,j in x.keys():
-    if x[i,j].x>0:
-        rutas.append((i,j))
-
-dic = generar_reporte(rutas)
-print(dic)
-
-exceso_capacidad = any(dic["Demanda"]>K)    
-exceso_energia = any(dic["Energía"]>B)
-hay_ciclos = (dic.shape[0]!=5)
-
-i = 1
+i = 0
 while (exceso_capacidad or exceso_energia or hay_ciclos) and i<100:
     print("================================================================================")
+    print(f'------------------------------ Iteración:  {i+1} -----------------------------')
+    rutas = correr_modelo()
+    dic = generar_reporte(rutas)
+    print("\n Resultado del modelo de optimización.")
+    print(dic)
     
     exceso_capacidad = any(dic["Demanda"]>K)
     if (exceso_capacidad==True):
-        eliminar_exceso_capacidad(dic)
+        eliminar_exceso_capacidad_v2(dic)
         
     exceso_energia = any(dic["Energía"]>B)
     if (exceso_energia==True):
@@ -240,11 +323,9 @@ while (exceso_capacidad or exceso_energia or hay_ciclos) and i<100:
     hay_ciclos = (dic.shape[0]!=5)
     if (hay_ciclos == True):
         eliminar_ciclos(dic) 
-        
-    rutas = correr_modelo()
-    dic = generar_reporte(rutas)
-    print(f'----- Iteración:  {i} ------')
-    print(dic)
+
     i = i + 1
-dic.to_excel("resultado_exceso_energia.xlsx")
+
+# Almacenar la solución en formato .xlsx
+#dic.to_excel("resultado_inicial.xlsx")
 plot_rutas(rutas)
