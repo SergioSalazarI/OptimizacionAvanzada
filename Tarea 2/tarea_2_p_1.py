@@ -44,9 +44,9 @@ for i in range(26):
         distance[(L[i],L[j])] = d
 
 # Demandas
-d = {}
+p = {}
 for i in range(26):
-    d[L[i]] = df.iloc[i,2]
+    p[L[i]] = df.iloc[i,2]
 
 # crear el modelo de optimización
 m = Model("MVRP");
@@ -144,7 +144,7 @@ def calcular_demanda(r:list):
     """
     demanda = 0
     for i in range(len(r)-1):
-        demanda = demanda + d[r[i]]
+        demanda = demanda + p[r[i]]
     return demanda
 
 def generar_reporte(rutas:list):
