@@ -37,7 +37,7 @@ for i in range(26):
 
 # Demandas
 d = {}
-for i in range(1,26):
+for i in range(26):
     d[L[i]] = df.iloc[i,2]
 
 m = Model("MVRP");
@@ -146,27 +146,19 @@ def calcular_demanda(r:list):
         demanda.append(dist)
     return demanda
 
-num = [i+1 for i in range(5)]
-rutas = [calcular_rutas(i) for i in range(5)]
+rutas = [calcular_todas_rutas(i) for i in range(26)]
+rutas = [i for i in rutas if i[0]==i[-1]]
+num = [i+1 for i in range(len(rutas))]
 energia = [ i*1.5 for i in calcular_distancias(rutas)]
 demanda = calcular_demanda(rutas)
 
-rutas_todas = [calcular_todas_rutas(i) for i in range(26)]
-rutas_todas = [i for i in rutas_todas if i[0]==i[-1]]
-num_todas = [i+1 for i in range(len(rutas_todas))]
-
-dic = {"Ruta":num_todas,"Secuencia":rutas_todas}
+dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
 dic = pd.DataFrame.from_dict(dic)
 dic.set_index("Ruta", inplace=True)
+
 print(dic)
-
-#dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
-#dic = pd.DataFrame.from_dict(dic)
-#dic.set_index("Ruta", inplace=True)
-
-#print(dic)
-#print(z)
-#print(np.sum(calcular_distancias(rutas)))
+print(z)
+print(np.sum(calcular_distancias(rutas)))
 
 def rutas_to_dataFrame(r:list):
     dic = {"from":[],"to":[]}
@@ -182,43 +174,15 @@ def ruta_to_dataFrame(r:list):
         dic["from"].append(r[i])
         dic["to"].append(r[i+1])
     return dic
-
-#print(rutas_to_dataFrame(rutas))
-
-def plot_rutas(r:list,color:list):
-    #dic = rutas_to_dataFrame(r)
-    #G = nx.from_pandas_edgelist(dic, 'from', 'to', create_using=nx.Graph())
-    G = nx.DiGraph()
-    dic = rutas_to_dataFrame(r)
     
-    for i in L:
-        G.add_node(i)
-        
-    for i,j in zip(dic["from"],dic["to"]):
-        G.add_edge(i,j)
-        
-    edges_colors=[]
-    for i in range(5):
-        edges_colors.extend([color[i]]*(len(r[i])-1))
-        
-    pos = nx.circular_layout(G)
-    nx.draw_kamada_kawai(G)
-    nx.draw_networkx_labels(G,pos=nx.spring_layout(G),font_size=6,alpha=0.8)
-    
-    plt.axis("off")
-    plt.axis("equal")
-    plt.tight_layout()
-    plt.show()
-    
-def plot_rutas_v2(r:list):
+def plot_rutas(r:list):
     dic = rutas_to_dataFrame(r)
     dic = pd.DataFrame(dic)
     G=nx.from_pandas_edgelist(dic, 'from', 'to')
     for i in L:
         G.add_node(i)
-    nx.draw(G, pos=nx.spring_layout(G),with_labels=True, node_size=200,width=2, edge_color="skyblue", style="solid", font_size=8)
+    nx.draw(G, pos=nx.spring_layout(G),with_labels=True, node_size=220,width=2, edge_color="skyblue", style="solid", font_size=7)
     plt.show()
     
 color = ["blue","red","black","orange","green"]
-#plot_rutas(rutas,color)
-#plot_rutas_v2(rutas)
+plot_rutas(rutas)
