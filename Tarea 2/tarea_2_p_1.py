@@ -76,7 +76,6 @@ rutas = []
 
 for i,j in x.keys():
     if x[i,j].x>0:
-        
         rutas.append((i,j))
 
 #for j in L:
@@ -85,7 +84,6 @@ for i,j in x.keys():
 
 def calcular_rutas(i:int):
     r = []
-    nombre = str(i+1)
     inicio = rutas[i][0]
     fin = rutas[i][1]
     r.extend((inicio,fin))  #r.append(inicio)  #r.append(fin)
@@ -107,6 +105,29 @@ def calcular_rutas(i:int):
             j = j+1
     return r
 
+def calcular_todas_rutas(i:int):
+    r = []
+    inicio = rutas[i][0]
+    fin = rutas[i][1]
+    r.extend((inicio,fin))  #r.append(inicio)  #r.append(fin)
+    
+    terminar = False
+    j = 0
+    
+    while (terminar != True) and (j<30):
+        inicio = rutas[j][0]
+        siguiente = rutas[j][1]
+        if inicio==fin and siguiente=="Depósito":
+            terminar=True
+            r.append("Depósito")
+        elif inicio==fin:
+            r.append(siguiente)
+            fin = siguiente
+            j = i+1
+        else:
+            j = j+1
+    return r
+
 def calcular_distancias(r:list):
     distancias = []
     for ruta in r:
@@ -120,7 +141,7 @@ def calcular_demanda(r:list):
     demanda = []
     for ruta in r:
         dist = 0
-        for i in range(1,len(ruta)-1):
+        for i in range(len(ruta)-1):
             dist = dist + d[ruta[i]]
         demanda.append(dist)
     return demanda
@@ -130,12 +151,22 @@ rutas = [calcular_rutas(i) for i in range(5)]
 energia = [ i*1.5 for i in calcular_distancias(rutas)]
 demanda = calcular_demanda(rutas)
 
-dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
+rutas_todas = [calcular_todas_rutas(i) for i in range(26)]
+rutas_todas = [i for i in rutas_todas if i[0]==i[-1]]
+num_todas = [i+1 for i in range(len(rutas_todas))]
+
+dic = {"Ruta":num_todas,"Secuencia":rutas_todas}
 dic = pd.DataFrame.from_dict(dic)
 dic.set_index("Ruta", inplace=True)
 print(dic)
-print(z)
-print(np.sum(calcular_distancias(rutas)))
+
+#dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
+#dic = pd.DataFrame.from_dict(dic)
+#dic.set_index("Ruta", inplace=True)
+
+#print(dic)
+#print(z)
+#print(np.sum(calcular_distancias(rutas)))
 
 def rutas_to_dataFrame(r:list):
     dic = {"from":[],"to":[]}
@@ -165,16 +196,29 @@ def plot_rutas(r:list,color:list):
         
     for i,j in zip(dic["from"],dic["to"]):
         G.add_edge(i,j)
+        
     edges_colors=[]
     for i in range(5):
         edges_colors.extend([color[i]]*(len(r[i])-1))
+        
     pos = nx.circular_layout(G)
     nx.draw_kamada_kawai(G)
     nx.draw_networkx_labels(G,pos=nx.spring_layout(G),font_size=6,alpha=0.8)
+    
     plt.axis("off")
     plt.axis("equal")
     plt.tight_layout()
     plt.show()
     
+def plot_rutas_v2(r:list):
+    dic = rutas_to_dataFrame(r)
+    dic = pd.DataFrame(dic)
+    G=nx.from_pandas_edgelist(dic, 'from', 'to')
+    for i in L:
+        G.add_node(i)
+    nx.draw(G, pos=nx.spring_layout(G),with_labels=True, node_size=200,width=2, edge_color="skyblue", style="solid", font_size=8)
+    plt.show()
+    
 color = ["blue","red","black","orange","green"]
-plot_rutas(rutas,color)
+#plot_rutas(rutas,color)
+#plot_rutas_v2(rutas)
