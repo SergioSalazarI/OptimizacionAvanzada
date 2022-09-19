@@ -51,14 +51,15 @@ x = m.addVars(L,L,vtype=GRB.BINARY,name='x')
 
 # Cada tienda es visitado
 for j in L[1:]:
-    m.addConstr(quicksum(x[i,j] for i in L)==1)
+    m.addConstr(quicksum(x[i,j] for i in L if(i!=j))==1)
     
 # Cada visita sale del nodo
 for i in L[1:]:
-    m.addConstr(quicksum(x[i,j] for j in L)==1)
-    
+    m.addConstr(quicksum(x[i,j] for j in L if(i!=j))==1)
+
 # Del depósito salen K camiones. K=5
 m.addConstr(quicksum(x[L[0],j] for j in L[1:])==5)
+m.addConstr(x[L[0],L[0]]==0)
 
 # Al depósito ingresan k camiones. K=5
 m.addConstr(quicksum(x[i,L[0]] for i in L[1:])==5)
@@ -70,9 +71,9 @@ for i in L:
 
 # función objetivo
 m.setObjective(quicksum(distance[i,j]*x[i,j] for i in L for j in L),GRB.MINIMIZE)
-m.setParam("Outputflag",0)
 
 # no mostrar el optimizador completo
+m.setParam("Outputflag",0)
 m.update()
 
 # reconoce todas las rutas generadas por el optimizador
@@ -124,7 +125,7 @@ def generar_reporte(rutas:list):
     rutas = [calcular_rutas(rutas,i) for i in range(26)]
     rutas = [i for i in rutas if i[0]==i[-1]]
     num = [i+1 for i in range(len(rutas))]
-    energia = [ i*1.5 for i in calcular_distancias(rutas)]
+    energia = [ i*0.5 for i in calcular_distancias(rutas)]
     demanda = [calcular_demanda(i) for i in rutas]
 
     dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
@@ -154,14 +155,6 @@ def plot_rutas(r:list):
         G.add_node(i)
     nx.draw(G, pos=nx.spring_layout(G),with_labels=True, node_size=220,width=2, edge_color="skyblue", style="solid", font_size=7)
     plt.show()
-
-def eliminar_ciclos(dic):
-    for row in range(5,dic.shape[0]):
-        secuencia = dic.iloc[row,0]
-        L_copy = [x for x in L if(x not in secuencia)]
-        demanda = dic.iloc[row,2]
-        cota = np.ceil(demanda/K)
-        m.addConstr(quicksum(x[i,j] for i in L_copy for j in secuencia[1:])>=cota)
         
 def eliminar_exceso_capacidad(dic):
     for row in range(dic.shape[0]):
@@ -170,21 +163,50 @@ def eliminar_exceso_capacidad(dic):
             secuencia = dic.iloc[row,0]
             m.addConstr(quicksum(d[j]*x[i,j] for i in secuencia[:-1] for j in secuencia[1:])<=K)
             
+def eliminar_exceso_capacidad_v2(dic):
+    for row in range(dic.shape[0]):
+        demanda = dic.iloc[row,2]
+        if demanda > K and row <5:
+            cota = np.ceil(demanda/K)
+            secuencia = dic.iloc[row,0]
+
+            L_copy = [x for x in L if(x not in secuencia)]
+            L_copy.extend(["Depósito"])
+            
+            m.addConstr(quicksum(x[i,j] for i in L_copy for j in secuencia[1:-1])>=cota)
+            
 def eliminar_exceso_energia(dic):
     for row in range(dic.shape[0]):
         energia = dic.iloc[row,1]
-        if energia > B:
+        if energia > B and row<5:
             print(f'La energia de {row} es: {energia}')
             secuencia = dic.iloc[row,0]
-            m.addConstr(quicksum(distance[i,j]*x[i,j] for i in secuencia for j in secuencia)*1.5<=B)
+            cota = np.ceil(energia/B)
+            
+            L_copy = [x for x in L if(x not in secuencia)]
+            L_copy.extend(["Depósito"])
+            
+            m.addConstr(quicksum(x[i,j] for i in L_copy for j in secuencia[1:-1])>=cota)
+            #m.addConstr(quicksum(distance[i,j]*x[i,j] for i in secuencia for j in secuencia)*0.5<=B)
+
+def eliminar_ciclos(dic):
+    for row in range(5,dic.shape[0]):
+        secuencia = dic.iloc[row,0]
+        L_copy = [x for x in L if(x not in secuencia)]
+        demanda = dic.iloc[row,2]
+        cota = np.ceil(demanda/K)
+        m.addConstr(quicksum(x[i,j] for i in L_copy for j in secuencia[1:])>=cota)
 
 def correr_modelo():
     m.optimize()
     z = m.getObjective().getValue()
+    print(m.Status)
     rutas = []
     for i,j in x.keys():
         if x[i,j].x>0:
             rutas.append((i,j))
+    print(z)
+    print(np.sum(calcular_distancias(rutas)))
     return rutas
 
 m.optimize()
@@ -198,29 +220,31 @@ for i,j in x.keys():
 
 dic = generar_reporte(rutas)
 print(dic)
-#print(z)
-#print(np.sum(calcular_distancias(rutas)))
 
-hay_ciclos = (dic.shape[0]!=5)
 exceso_capacidad = any(dic["Demanda"]>K)    
 exceso_energia = any(dic["Energía"]>B)
-    
+hay_ciclos = (dic.shape[0]!=5)
+
 i = 1
-#while exceso_energia and i<100:
-while hay_ciclos or exceso_capacidad:
+while (exceso_capacidad or exceso_energia or hay_ciclos) and i<100:
     print("================================================================================")
-    if (hay_ciclos == True):
-        eliminar_ciclos(dic) 
+    
+    exceso_capacidad = any(dic["Demanda"]>K)
     if (exceso_capacidad==True):
         eliminar_exceso_capacidad(dic)
-    #if (exceso_energia==True):
-    #    eliminar_exceso_energia(dic)
+        
+    exceso_energia = any(dic["Energía"]>B)
+    if (exceso_energia==True):
+        eliminar_exceso_energia(dic)
+        
+    hay_ciclos = (dic.shape[0]!=5)
+    if (hay_ciclos == True):
+        eliminar_ciclos(dic) 
+        
     rutas = correr_modelo()
     dic = generar_reporte(rutas)
+    print(f'----- Iteración:  {i} ------')
     print(dic)
-    print(f'Iteración:  {i}')
-    hay_ciclos = (dic.shape[0]!=5)
-    exceso_capacidad = any(dic["Demanda"]>K)
-    exceso_energia = any(dic["Energía"]>B)
     i = i + 1
+dic.to_excel("resultado_exceso_energia.xlsx")
 plot_rutas(rutas)
