@@ -65,22 +65,8 @@ for i in L:
 # función objetivo
 m.setObjective(quicksum(distance[i,j]*x[i,j] for i in L for j in L),GRB.MINIMIZE)
 
+# no mostrar el optimizador completo
 m.update()
-
-m.setParam("Outputflag",0)
-m.optimize()
-
-z = m.getObjective().getValue()
-
-rutas = []
-
-for i,j in x.keys():
-    if x[i,j].x>0:
-        rutas.append((i,j))
-
-#for j in L:
-#    if x["Tienda 19",j].x>0:
-#        print("Tienda 19 - ",j)
 
 def calcular_rutas(i:int):
     r = []
@@ -146,20 +132,6 @@ def calcular_demanda(r:list):
         demanda.append(dist)
     return demanda
 
-rutas = [calcular_todas_rutas(i) for i in range(26)]
-rutas = [i for i in rutas if i[0]==i[-1]]
-num = [i+1 for i in range(len(rutas))]
-energia = [ i*1.5 for i in calcular_distancias(rutas)]
-demanda = calcular_demanda(rutas)
-
-dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
-dic = pd.DataFrame.from_dict(dic)
-dic.set_index("Ruta", inplace=True)
-
-print(dic)
-print(z)
-print(np.sum(calcular_distancias(rutas)))
-
 def rutas_to_dataFrame(r:list):
     dic = {"from":[],"to":[]}
     for ruta in r:
@@ -183,6 +155,30 @@ def plot_rutas(r:list):
         G.add_node(i)
     nx.draw(G, pos=nx.spring_layout(G),with_labels=True, node_size=220,width=2, edge_color="skyblue", style="solid", font_size=7)
     plt.show()
-    
-color = ["blue","red","black","orange","green"]
+
+m.setParam("Outputflag",0)
+m.optimize()
+
+z = m.getObjective().getValue()
+
+rutas = []
+
+for i,j in x.keys():
+    if x[i,j].x>0:
+        rutas.append((i,j))
+        
+rutas = [calcular_todas_rutas(i) for i in range(26)]
+rutas = [i for i in rutas if i[0]==i[-1]]
+num = [i+1 for i in range(len(rutas))]
+energia = [ i*1.5 for i in calcular_distancias(rutas)]
+demanda = calcular_demanda(rutas)
+
+dic = {"Ruta":num,"Secuencia":rutas,"Energía":energia,"Demanda":demanda}
+dic = pd.DataFrame.from_dict(dic)
+dic.set_index("Ruta", inplace=True)
+
+print(dic)
+print(z)
+print(np.sum(calcular_distancias(rutas)))
+
 plot_rutas(rutas)
