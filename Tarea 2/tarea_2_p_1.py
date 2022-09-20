@@ -68,9 +68,8 @@ for i in L[1:]:
 m.addConstr(quicksum(x[L[0],j] for j in L[1:])==5)
 
 # el arco depósito-depósito es cero.
-#m.addConstr(x[L[0],L[0]]==0)
-#for i in L:
-#    m.addConstr(x[i,i]==0)
+for i in L:
+    m.addConstr(x[i,i]==0)
 
 # Al depósito ingresan k camiones. K=5
 m.addConstr(quicksum(x[i,L[0]] for i in L[1:])==5)
