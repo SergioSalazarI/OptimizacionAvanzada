@@ -327,7 +327,7 @@ hay_ciclos = True
 i = 0
 zs = []
 
-while (exceso_capacidad or exceso_energia or hay_ciclos) and i<80:
+while (exceso_capacidad or exceso_energia or hay_ciclos) and i<100:
     print("================================================================================")
     print(f'------------------------------ Iteración:  {i+1} -----------------------------')
     rutas = correr_modelo()
