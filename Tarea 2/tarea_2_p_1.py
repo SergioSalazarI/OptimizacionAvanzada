@@ -68,7 +68,9 @@ for i in L[1:]:
 m.addConstr(quicksum(x[L[0],j] for j in L[1:])==5)
 
 # el arco depósito-depósito es cero.
-m.addConstr(x[L[0],L[0]]==0)
+#m.addConstr(x[L[0],L[0]]==0)
+#for i in L:
+#    m.addConstr(x[i,i]==0)
 
 # Al depósito ingresan k camiones. K=5
 m.addConstr(quicksum(x[i,L[0]] for i in L[1:])==5)
@@ -293,7 +295,7 @@ def correr_modelo():
     """
     m.optimize()
     z = m.getObjective().getValue()
-    rutas = []
+    rutas = [z]
     for i,j in x.keys():
         if x[i,j].x>0:
             rutas.append((i,j))
@@ -302,17 +304,37 @@ def correr_modelo():
     print(f'La energía total consumida es:     {z*0.5} KWh')
     return rutas
 
+def plot_evolucion(zs:list,i:int):
+    """
+    Genera la gráfica de la evolución de la función objetivo en función de la iteración.
+    _____________________________________
+    Parámetros
+    zs[list]: lista con el valor de la función objetivo en cada iteración.
+    i[int]: número de iteraciones realizadas.
+    _____________________________________
+    Se generó la gráfica.
+    """
+    plt.plot(range(1,i+1),zs)
+    plt.title("Recorrido Total VS. Iteración")
+    plt.xlabel("Iteración")
+    plt.ylabel("Recorrido Total (Km)")
+    plt.show()
+
 # Boleanos que indican el estado del modelo
 exceso_capacidad = True
 exceso_energia = True
 hay_ciclos = True
 
 i = 0
-while (exceso_capacidad or exceso_energia or hay_ciclos) and i<100:
+zs = []
+
+while (exceso_capacidad or exceso_energia or hay_ciclos) and i<80:
     print("================================================================================")
     print(f'------------------------------ Iteración:  {i+1} -----------------------------')
     rutas = correr_modelo()
-    dic = generar_reporte(rutas)
+    z = rutas[0]
+    zs.append(z)
+    dic = generar_reporte(rutas[1:])
     print("\n Resultado del modelo de optimización.")
     print(dic)
     
@@ -329,7 +351,12 @@ while (exceso_capacidad or exceso_energia or hay_ciclos) and i<100:
         eliminar_ciclos(dic) 
 
     i = i + 1
-
+    
 # Almacenar la solución en formato .xlsx
-#dic.to_excel("resultados.xlsx")
-plot_rutas(rutas)
+#dic.to_excel("resultados_parcial.xlsx")
+
+# generar la evolución de la F.O.
+plot_evolucion(zs,i)
+
+# descomentar para observar el grafo
+#plot_rutas(rutas)
